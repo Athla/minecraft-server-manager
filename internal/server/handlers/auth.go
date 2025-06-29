@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"mine-server-manager/internal/services/auth"
 	"mine-server-manager/pkg/models"
@@ -9,6 +10,7 @@ import (
 
 type AuthHandler struct {
 	service *auth.AuthService
+	ctx     context.Context
 }
 
 func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +23,7 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.service.ValidatePwd(email, pwd) {
+	if !h.service.ValidatePwd(h.ctx, email, pwd) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 
 		return

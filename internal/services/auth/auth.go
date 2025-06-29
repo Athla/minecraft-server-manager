@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"context"
 	"crypto/subtle"
 	"log/slog"
 	"mine-server-manager/internal/config"
 	"mine-server-manager/internal/repository"
+	"mine-server-manager/pkg/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,6 +25,26 @@ func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger) *AuthService {
 		cfg:    cfg,
 		logger: logger,
 	}
+}
+
+func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd string) (*repository.User, error) {
+	const HASH_COST = 10
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(pwd), HASH_COST)
+	if err != nil {
+		return nil, err
+	}
+
+	newUser := models.User{
+		Email:    userEmail,
+		Password: string(hashedPwd),
+	}
+
+	createdUser, err := s.db.SqlRepo.CreateUser(ctx, newUser.Email, newUser.Username, newUser.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &createdUser, nil
 }
 
 func (s *AuthService) IsWhitelisted(userEmail string) bool {
@@ -46,10 +68,10 @@ func (s *AuthService) GenerateToken(userEmail string) (string, error) {
 	return token.SignedString([]byte(s.cfg.JWTSecret))
 }
 
-func (s *AuthService) ValidatePwd(userEmail, inputPwd string) bool {
-	hashedPwd, err := s.db.SqlRepo.RetrieveHashedPwd(userEmail)
+func (s *AuthService) ValidatePwd(ctx context.Context, userEmail, inputPwd string) bool {
+	currUsr, err := s.db.SqlRepo.GetUserByEmail(ctx, userEmail)
 	// short hand if flow
 
-	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(inputPwd))
+	err = bcrypt.CompareHashAndPassword([]byte(currUsr.Password), []byte(inputPwd))
 	return err == nil
 }
