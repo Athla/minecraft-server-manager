@@ -1,6 +1,7 @@
 # Project mine-server-manager
 
-One Paragraph of project description goes here
+Project to manage local instances of minecraft servers running in a VPS.
+FE made with Lovable.
 
 ## Getting Started
 
