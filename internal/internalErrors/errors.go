@@ -10,4 +10,6 @@ var (
 	ErrTokenExpired         = errors.New("token expired")
 	ErrTokenInvalid         = errors.New("token invalid")
 	ErrUserAlreadyExists    = errors.New("user already exists")
+	ErrCacheItemNotFound    = errors.New("cache item not found")
+	ErrCacheItemExpired     = errors.New("cache item expired")
 )

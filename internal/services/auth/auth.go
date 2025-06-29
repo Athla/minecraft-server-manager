@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"log/slog"
 	"mine-server-manager/internal/config"
+	"mine-server-manager/internal/internalErrors"
 	"mine-server-manager/internal/repository"
 	"time"
 
@@ -44,6 +45,26 @@ func (s *AuthService) Login(ctx context.Context, email, inputPwd string) (string
 	}
 
 	return token, nil
+}
+
+func (s *AuthService) Logout(tokenString string) error {
+	claims := &jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		return []byte(s.cfg.JWTSecret), nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return internalErrors.ErrTokenExpired
+	}
+
+	expiration := claims.ExpiresAt.Time
+	ttl := time.Until(expiration)
+
+	return s.db.CacheRepository.Add(tokenString, "invalidated", ttl)
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd string) (*repository.User, error) {

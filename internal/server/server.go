@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"mine-server-manager/internal/config"
+	"mine-server-manager/internal/services"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,8 +14,9 @@ import (
 )
 
 type Server struct {
-	port int
-	cfg  *config.Config
+	port     int
+	cfg      *config.Config
+	services *services.Service
 }
 
 func NewServer() *http.Server {

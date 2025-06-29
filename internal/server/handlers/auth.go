@@ -5,6 +5,7 @@ import (
 	"mine-server-manager/internal/services/auth"
 	"mine-server-manager/pkg/models"
 	"net/http"
+	"strings"
 )
 
 type AuthHandler struct {
@@ -22,11 +23,6 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if !h.service.IsWhitelisted(user.Email) {
-		http.Error(w, "access denied, not whitelisted", http.StatusForbidden)
 		return
 	}
 
@@ -52,11 +48,6 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.service.IsWhitelisted(creds.Email) {
-		http.Error(w, "access denied, not whitelisted", http.StatusForbidden)
-		return
-	}
-
 	token, err := h.service.Login(r.Context(), creds.Email, creds.Password)
 	if err != nil {
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
@@ -66,6 +57,27 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(models.SuccessResponse{
 		Message: "Login successful",
 		Data:    map[string]string{"token": token},
+		Code:    http.StatusOK,
+	})
+}
+
+func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "missing authorization header", http.StatusBadRequest)
+		return
+	}
+
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+	err := h.service.Logout(tokenString)
+	if err != nil {
+		http.Error(w, "failed to logout", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(models.SuccessResponse{
+		Message: "logout successful, token invalidated",
 		Code:    http.StatusOK,
 	})
 }

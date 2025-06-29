@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"log"
+	"mine-server-manager/internal/server/handlers"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -10,9 +11,16 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := mux.NewRouter()
+	authHandler := handlers.NewAuthHandler(s.services.AuthService)
 
 	// Apply CORS middleware
 	r.Use(s.corsMiddleware)
+
+	authRouter := r.Path("/auth").Subrouter()
+	authRouter.Use(s.services.AuthService.WhitelistMiddleware)
+	authRouter.HandleFunc("/login", authHandler.LoginHandler).Methods(http.MethodPost)
+	authRouter.HandleFunc("/logout", authHandler.LogoutHandler).Methods(http.MethodPost)
+	authRouter.HandleFunc("/register", authHandler.RegisterHandler).Methods(http.MethodPost)
 
 	r.HandleFunc("/", s.HelloWorldHandler)
 
