@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"mine-server-manager/internal/config"
 	"mine-server-manager/internal/repository"
-	"mine-server-manager/pkg/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,11 +19,31 @@ type AuthService struct {
 	db repository.Repository
 }
 
-func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger) *AuthService {
+func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger, db repository.Repository) *AuthService {
 	return &AuthService{
 		cfg:    cfg,
 		logger: logger,
+		db:     db,
 	}
+}
+
+func (s *AuthService) Login(ctx context.Context, email, inputPwd string) (string, error) {
+	currUsr, err := s.db.SqlRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(currUsr.Password), []byte(inputPwd))
+	if err != nil {
+		return "", err
+	}
+
+	token, err := s.GenerateToken(email)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd string) (*repository.User, error) {
@@ -34,12 +53,13 @@ func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd s
 		return nil, err
 	}
 
-	newUser := models.User{
+	params := repository.CreateUserParams{
+		Username: userName,
 		Email:    userEmail,
 		Password: string(hashedPwd),
 	}
 
-	createdUser, err := s.db.SqlRepo.CreateUser(ctx, newUser.Email, newUser.Username, newUser.Password)
+	createdUser, err := s.db.SqlRepo.CreateUser(ctx, params)
 	if err != nil {
 		return nil, err
 	}

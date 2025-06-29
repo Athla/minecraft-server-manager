@@ -3,7 +3,7 @@ package repository
 import "context"
 
 type SQLRepository interface {
-	CreateUser(ctx context.Context, userEmail, userName, pwd string) (User, error)
+	CreateUser(ctx context.Context, createParams CreateUserParams) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 }
 
@@ -17,12 +17,8 @@ func NewSQLRepository(db DBTX) SQLRepository {
 	}
 }
 
-func (r *sqlRepository) CreateUser(ctx context.Context, userEmail, userName, pwd string) (User, error) {
-	return r.Queries.CreateUser(ctx, CreateUserParams{
-		Username: userName,
-		Email:    userEmail,
-		Password: pwd,
-	})
+func (r *sqlRepository) CreateUser(ctx context.Context, createParams CreateUserParams) (User, error) {
+	return r.Queries.CreateUser(ctx, createParams)
 }
 
 func (r *sqlRepository) GetUserByEmail(ctx context.Context, email string) (User, error) {
