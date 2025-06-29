@@ -2,9 +2,9 @@ package auth
 
 import (
 	"crypto/subtle"
-	"hash"
 	"log/slog"
 	"mine-server-manager/internal/config"
+	"mine-server-manager/internal/repository"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,7 +15,7 @@ type AuthService struct {
 	cfg    *config.AuthConfig
 	logger *slog.Logger
 
-	db *repository.SQL
+	db repository.Repository
 }
 
 func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger) *AuthService {
@@ -47,7 +47,7 @@ func (s *AuthService) GenerateToken(userEmail string) (string, error) {
 }
 
 func (s *AuthService) ValidatePwd(userEmail, inputPwd string) bool {
-	hashedPwd, err := s.db.RetrieveHashedPwd(userEmail)
+	hashedPwd, err := s.db.SqlRepo.RetrieveHashedPwd(userEmail)
 	// short hand if flow
 
 	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(inputPwd))

@@ -1,5 +1,6 @@
 package repository
 
 type SQLRepository interface {
-	RetrieveHashedPwd(userEmail string) error
+	CreateUser(userEmail, pwd string) error
+	RetrieveHashedPwd(userEmail string) ([]byte, error)
 }
