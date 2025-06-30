@@ -6,6 +6,8 @@ import (
 	"mine-server-manager/pkg/models"
 	"net/http"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
 type AuthHandler struct {
@@ -71,6 +73,7 @@ func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	err := h.service.Logout(tokenString)
 	if err != nil {
+		log.Errorf("Failed to logout due: %v", err)
 		http.Error(w, "failed to logout", http.StatusInternalServerError)
 		return
 	}

@@ -61,7 +61,7 @@ func TestAuthHandlers(t *testing.T) {
 		JWTSecret: "test-secret",
 	}
 
-	authService := auth.NewAuthService(authConfig, nil, repository.Repository{SqlRepo: mockRepo})
+	authService := auth.NewAuthService(authConfig, nil, &repository.Repository{SqlRepo: mockRepo})
 	authHandler := NewAuthHandler(authService)
 
 	router := http.NewServeMux()
@@ -232,7 +232,7 @@ func TestAuthHandlers(t *testing.T) {
 			Email: "test@rxample.com",
 		}
 
-		service := auth.NewAuthService(shortExpAuthConfig, nil, repository.Repository{SqlRepo: mockRepo})
+		service := auth.NewAuthService(shortExpAuthConfig, nil, &repository.Repository{SqlRepo: mockRepo})
 
 		token, err := service.GenerateToken(user.Email)
 		if err != nil {

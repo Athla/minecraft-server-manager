@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"log/slog"
 	"mine-server-manager/internal/config"
-	"mine-server-manager/internal/internalErrors"
 	"mine-server-manager/internal/repository"
 	"time"
 
@@ -17,10 +16,10 @@ type AuthService struct {
 	cfg    *config.AuthConfig
 	logger *slog.Logger
 
-	db repository.Repository
+	db *repository.Repository
 }
 
-func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger, db repository.Repository) *AuthService {
+func NewAuthService(cfg *config.AuthConfig, logger *slog.Logger, db *repository.Repository) *AuthService {
 	return &AuthService{
 		cfg:    cfg,
 		logger: logger,
@@ -58,7 +57,7 @@ func (s *AuthService) Logout(tokenString string) error {
 	}
 
 	if !token.Valid {
-		return internalErrors.ErrTokenExpired
+		return s.db.CacheRepository.Add(tokenString, "invalidated", 0)
 	}
 
 	expiration := claims.ExpiresAt.Time

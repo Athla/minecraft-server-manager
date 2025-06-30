@@ -2,7 +2,9 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"mine-server-manager/internal/config"
+	"mine-server-manager/internal/repository"
 	"mine-server-manager/internal/services"
 	"net/http"
 	"os"
@@ -26,15 +28,21 @@ func NewServer() *http.Server {
 	if err != nil {
 		panic(err)
 	}
+
+	db := repository.NewRepository(cfg)
+	services := services.NewServiceWrapper(cfg, db)
 	NewServer := &Server{
-		port: port,
-		cfg:  cfg,
+		port:     port,
+		cfg:      cfg,
+		services: services,
 	}
 
 	router := NewServer.RegisterRoutes()
 	handler := handlers.LoggingHandler(os.Stdout, router)
 
 	// Declare Server config
+
+	log.Println("Server started on port %d", NewServer.port)
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),
 		Handler:      handler,
