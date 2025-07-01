@@ -5,6 +5,7 @@ import (
 	internalErrors "mine-server-manager/internal/internalErrors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -32,6 +33,13 @@ func (s *AuthService) JWTAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		isInvalid, err := s.db.CacheRepository.Get(tokenString)
+		if err == nil && isInvalid == "invalidated" {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
+
 		token, err := s.ValidateJWT(tokenString)
 		if err != nil || !token.Valid {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
@@ -42,6 +50,18 @@ func (s *AuthService) JWTAuthMiddleware(next http.Handler) http.Handler {
 		if !ok {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
+		}
+		sub, ok := claims["sub"].(string)
+		if !ok || sub == "" {
+			http.Error(w, "invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		if exp, ok := claims["exp"].(float64); ok {
+			if time.Now().Unix() > int64(exp) {
+				http.Error(w, "token expired", http.StatusUnauthorized)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), userContextKey, claims["sub"])

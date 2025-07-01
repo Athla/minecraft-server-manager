@@ -13,7 +13,7 @@ import (
 
 type Service struct {
 	AuthService    *auth.AuthService
-	DockerService  *docker.DockerService
+	DockerService  *docker.Service
 	ModpackService *modpack.ModpackService
 	MonitorService *monitor.MonitoringService
 	ServerService  *servers.ServerManagementService

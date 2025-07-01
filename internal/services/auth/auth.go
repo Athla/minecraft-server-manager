@@ -53,22 +53,21 @@ func (s *AuthService) Logout(tokenString string) error {
 	})
 
 	if err != nil {
-		return err
-	}
-
-	if !token.Valid {
-		return s.db.CacheRepository.Add(tokenString, "invalidated", 0)
+		return s.db.CacheRepository.Add(tokenString, "invalidated", time.Hour*24)
 	}
 
 	expiration := claims.ExpiresAt.Time
 	ttl := time.Until(expiration)
 
+	if !token.Valid {
+		return s.db.CacheRepository.Add(tokenString, "invalidated", ttl)
+	}
+
 	return s.db.CacheRepository.Add(tokenString, "invalidated", ttl)
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd string) (*repository.User, error) {
-	const HASH_COST = 10
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(pwd), HASH_COST)
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(pwd), s.cfg.BCryptCost)
 	if err != nil {
 		return nil, err
 	}

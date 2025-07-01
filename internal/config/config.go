@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"time"
@@ -30,10 +31,18 @@ func (c *Config) Load() error {
 	}
 
 	whitelist := strings.Split(string(data), "\n")
+	JWTSecret := os.Getenv("JWT_SECRET")
+	if JWTSecret == "" {
+		return errors.New("JWT_SECRET IS REQUIRED.")
+	}
+	if len(JWTSecret) < 32 {
+		return errors.New("JWT_SECRET MUST BE AT LEAST 32 CHARACTERS.")
+	}
+
 	c.AuthConfig = &AuthConfig{
 		Whitelist: whitelist,
 		TokenExp:  time.Minute * 15,
-		JWTSecret: os.Getenv("JWT_SECRET"),
+		JWTSecret: JWTSecret,
 	}
 	c.SqlDriver = "sqlite3"
 	c.SqlConnString = "mine-server-manager.db"

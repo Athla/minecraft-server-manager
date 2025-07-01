@@ -21,6 +21,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	authRouter.HandleFunc("/logout", authHandler.LogoutHandler).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/register", authHandler.RegisterHandler).Methods("POST", "OPTIONS")
 
+	dockerHandler := handlers.NewDockerHandler(s.services.DockerService)
+	r.HandleFunc("/create_vanilla", dockerHandler.CreateServerHandler).Methods("POST", "OPTIONS")
+
 	r.HandleFunc("/", s.HelloWorldHandler)
 
 	return r
@@ -41,6 +44,16 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+func SecurityHeadersMiddlewware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		next.ServeHTTP(w, r)
 	})
 }

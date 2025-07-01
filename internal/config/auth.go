@@ -18,8 +18,8 @@ func LoadAuthConfig(whitelistPath string) (*AuthConfig, error) {
 
 	cfg.Whitelist = loadWhitelist(whitelistPath)
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
-	cfg.BCryptCost = 5
-	cfg.TokenExp = time.Minute * 10
+	cfg.BCryptCost = 12
+	cfg.TokenExp = time.Hour * 10
 
 	return &cfg, nil
 }

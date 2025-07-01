@@ -40,7 +40,7 @@ const LoginInterface: React.FC<LoginInterfaceProps> = ({ onLogin, onSwitchToRegi
 		} catch (error) {
 			toast({
 				title: "Login Failed",
-				description: "Please check your credentials and try again.",
+				description: "Please check your credentials and try again." + error,
 				variant: "destructive"
 			});
 		} finally {
