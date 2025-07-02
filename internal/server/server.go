@@ -42,7 +42,7 @@ func NewServer() *http.Server {
 
 	// Declare Server config
 
-	log.Println("Server started on port %d", NewServer.port)
+	log.Printf("Server started on port :%d\n", NewServer.port)
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),
 		Handler:      handler,

@@ -10,9 +10,10 @@ import { register } from '@/lib/api';
 
 interface RegisterInterfaceProps {
   onRegisterSuccess: () => void;
+  onSwitchToLogin: () => void;
 }
 
-const RegisterInterface: React.FC<RegisterInterfaceProps> = ({ onRegisterSuccess }) => {
+const RegisterInterface: React.FC<RegisterInterfaceProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -100,6 +101,13 @@ const RegisterInterface: React.FC<RegisterInterfaceProps> = ({ onRegisterSuccess
           className="w-full minecraft-button bg-orange-600 hover:bg-orange-700 text-black font-bold py-3"
         >
           {isRegistering ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+        </Button>
+        <Button
+          onClick={onSwitchToLogin}
+          variant="link"
+          className="w-full text-slate-400 hover:text-slate-200"
+        >
+          Already have an account? Login here.
         </Button>
       </CardContent>
     </Card>

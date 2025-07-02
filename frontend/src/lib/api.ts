@@ -1,5 +1,15 @@
 const API_URL = "http://localhost:8080";
 
+const isTokenExpired = (token: string): boolean => {
+	try {
+		const payload = JSON.parse(atob(token.split('.')[1]));
+		const currentTime = Math.floor(Date.now() / 1000);
+		return payload.exp < currentTime;
+	} catch (error) {
+		return true; // If we can't parse the token, consider it expired
+	}
+};
+
 const handleResponse = async (response: Response) => {
 	if (response.status === 401) {
 		localStorage.removeItem("token")
@@ -40,10 +50,6 @@ export const register = async (email: string, username: string, password: string
 		body: JSON.stringify({ email, username, password }),
 	});
 
-	if (!response.ok) {
-		throw new Error('Registration failed');
-	}
-
 	return handleResponse(response)
 };
 
@@ -62,3 +68,5 @@ export const logout = async (token: string) => {
 
 	return response.json()
 }
+
+export { isTokenExpired };

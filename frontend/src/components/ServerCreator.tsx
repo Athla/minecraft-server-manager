@@ -32,7 +32,7 @@ const ServerCreator: React.FC<ServerCreatorProps> = ({ onLogout }) => {
 	const [ramAmount, setRamAmount] = useState([2]);
 	const [modpackFile, setModpackFile] = useState<File | null>(null);
 	const [modFiles, setModFiles] = useState<FileList | null>(null);
-	const [activeTab, setActiveTab] = useState('modpack');
+	const [activeTab, setActiveTab] = useState('vanilla');
 
 	const handleLogoutClick = async () => {
 		try {
@@ -70,16 +70,15 @@ const ServerCreator: React.FC<ServerCreatorProps> = ({ onLogout }) => {
 
 		// Simulate server creation
 		setTimeout(() => {
-			const newServer: Server = {
-				id: `server_${Date.now()}`,
-				name: serverName,
-				ip: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}:25565`,
-				ram: ramAmount[0],
-				status: 'starting',
-				modpack: modpackFile?.name,
-				mods: modFiles ? Array.from(modFiles).map(file => file.name) : []
-			};
-
+		const newServer: Server = {
+			id: `server_${Date.now()}`,
+			name: serverName,
+			ip: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}:25565`,
+			ram: ramAmount[0],
+			status: 'starting',
+			modpack: activeTab === 'vanilla' ? 'Vanilla' : modpackFile?.name,
+			mods: activeTab === 'mods' && modFiles ? Array.from(modFiles).map(file => file.name) : []
+		};
 			setServers(prev => [...prev, newServer]);
 
 			// Simulate server starting
@@ -96,12 +95,12 @@ const ServerCreator: React.FC<ServerCreatorProps> = ({ onLogout }) => {
 				});
 			}, 3000);
 
-			setIsCreating(false);
-			setServerName('');
-			setRamAmount([2]);
-			setModpackFile(null);
-			setModFiles(null);
-		}, 2000);
+		setIsCreating(false);
+		setServerName('');
+		setRamAmount([2]);
+		setModpackFile(null);
+		setModFiles(null);
+		setActiveTab('vanilla');		}, 2000);
 	};
 
 	const handleServerAction = (serverId: string, action: 'stop' | 'start') => {
@@ -213,12 +212,28 @@ const ServerCreator: React.FC<ServerCreatorProps> = ({ onLogout }) => {
 							</div>
 
 							<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-								<TabsList className="grid w-full grid-cols-2 bg-slate-800">
-									<TabsTrigger value="modpack" className="text-xs">MODPACK</TabsTrigger>
-									<TabsTrigger value="mods" className="text-xs">MODS</TabsTrigger>
-								</TabsList>
+				<TabsList className="grid w-full grid-cols-3 bg-slate-800">
+					<TabsTrigger value="vanilla" className="text-xs">VANILLA</TabsTrigger>
+					<TabsTrigger value="modpack" className="text-xs">MODPACK</TabsTrigger>
+					<TabsTrigger value="mods" className="text-xs">MODS</TabsTrigger>
+				</TabsList>
+								<TabsContent value="vanilla" className="space-y-4">
+					<div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center space-y-4 bg-slate-800/50">
+						<div className="h-12 w-12 text-slate-400 mx-auto flex items-center justify-center">
+							<div className="w-8 h-8 bg-green-600 rounded-sm"></div>
+						</div>
+						<div className="space-y-2">
+							<p className="text-slate-300 text-sm">Vanilla Minecraft Server</p>
+							<p className="text-slate-500 text-xs">Pure Minecraft experience with no modifications</p>
+						</div>
+						<div className="bg-slate-700 p-4 rounded-lg">
+							<p className="text-green-400 text-sm font-medium">✓ Vanilla Server Selected</p>
+							<p className="text-slate-400 text-xs mt-1">No additional files needed</p>
+						</div>
+					</div>
+				</TabsContent>
 
-								<TabsContent value="modpack" className="space-y-4">
+				<TabsContent value="modpack" className="space-y-4">
 									<div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center space-y-4 bg-slate-800/50">
 										<Upload className="h-12 w-12 text-slate-400 mx-auto" />
 										<div className="space-y-2">
@@ -357,14 +372,17 @@ const ServerCreator: React.FC<ServerCreatorProps> = ({ onLogout }) => {
 													)}
 												</div>
 
-												{server.modpack && (
-													<div className="flex items-center gap-2">
-														<Badge className="bg-purple-600 text-black text-xs">
-															MODPACK: {server.modpack}
-														</Badge>
-													</div>
-												)}
-
+					{server.modpack && (
+						<div className="flex items-center gap-2">
+							<Badge className={`text-black text-xs ${
+								server.modpack === 'Vanilla' 
+									? 'bg-green-600' 
+									: 'bg-purple-600'
+							}`}>
+								{server.modpack === 'Vanilla' ? 'VANILLA' : `MODPACK: ${server.modpack}`}
+							</Badge>
+						</div>
+					)}
 												{server.mods.length > 0 && (
 													<div className="space-y-1">
 														<p className="text-xs text-slate-400">Mods ({server.mods.length}):</p>

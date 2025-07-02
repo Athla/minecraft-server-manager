@@ -16,7 +16,7 @@ func parseCreateOpts(opts *CreateOptions) {
 	}
 }
 
-func newDockerClient(opts client.Opt) (*client.Client, error) {
+func (s *Service) newDockerClient(opts client.Opt) (*client.Client, error) {
 	cli, err := client.NewClientWithOpts(opts)
 	if err != nil {
 		return nil, err

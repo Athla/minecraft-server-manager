@@ -27,11 +27,16 @@ func LoadAuthConfig(whitelistPath string) (*AuthConfig, error) {
 func loadWhitelist(whitelistPath string) []string {
 	data, err := os.ReadFile(whitelistPath)
 	if err != nil {
-		// should panic since it's a must
 		panic(err)
 	}
-
-	whitelist := strings.Split(string(data), "\n")
+	lines := strings.Split(string(data), "\n")
+	var whitelist []string
+	for _, line := range lines {
+		email := strings.TrimSpace(line)
+		if email != "" && strings.Contains(email, "@") {
+			whitelist = append(whitelist, email)
+		}
+	}
 
 	return whitelist
 }

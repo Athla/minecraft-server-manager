@@ -19,7 +19,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	authRouter := r.PathPrefix("/auth").Subrouter()
 	authRouter.HandleFunc("/login", authHandler.LoginHandler).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/logout", authHandler.LogoutHandler).Methods("POST", "OPTIONS")
-	authRouter.HandleFunc("/register", authHandler.RegisterHandler).Methods("POST", "OPTIONS")
+	authRouter.Handle(
+		"/register",
+		s.services.AuthService.WhitelistMiddleware(
+			http.HandlerFunc(authHandler.RegisterHandler))).Methods("POST", "OPTIONS")
 
 	dockerHandler := handlers.NewDockerHandler(s.services.DockerService)
 	r.HandleFunc("/create_vanilla", dockerHandler.CreateServerHandler).Methods("POST", "OPTIONS")

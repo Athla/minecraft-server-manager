@@ -15,9 +15,18 @@ const Index = () => {
 		const storedToken = localStorage.getItem('token');
 		const storedUsername = localStorage.getItem('username');
 		if (storedToken && storedUsername) {
-			setIsLoggedIn(true);
-			setUsername(storedUsername);
-			setToken(storedToken);
+			// Check if token is expired
+			import('@/lib/api').then(({ isTokenExpired }) => {
+				if (isTokenExpired(storedToken)) {
+					// Token is expired, clear storage
+					localStorage.removeItem('token');
+					localStorage.removeItem('username');
+				} else {
+					setIsLoggedIn(true);
+					setUsername(storedUsername);
+					setToken(storedToken);
+				}
+			});
 		}
 	}, []);
 
@@ -29,7 +38,15 @@ const Index = () => {
 		localStorage.setItem('username', newUsername);
 	};
 
-	const handleLogout = () => {
+	const handleLogout = async () => {
+		if (token) {
+			try {
+				const { logout } = await import('@/lib/api');
+				await logout(token);
+			} catch (error) {
+				console.error('Logout API call failed:', error);
+			}
+		}
 		setIsLoggedIn(false);
 		setUsername('');
 		setToken(null);
@@ -45,6 +62,10 @@ const Index = () => {
 		setShowLogin(false); // Switch to showing the registration interface
 	};
 
+	const handleSwitchToLogin = () => {
+		setShowLogin(true); // Switch to showing the login interface
+	};
+
 	return (
 		<div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
 			<div className="w-full min-w-md">
@@ -56,7 +77,7 @@ const Index = () => {
 							{showLogin ? (
 								<LoginInterface onLogin={handleLogin} onSwitchToRegister={handleSwitchToRegister} />
 							) : (
-								<RegisterInterface onRegisterSuccess={handleRegisterSuccess} />
+								<RegisterInterface onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={handleSwitchToLogin} />
 							)}
 						</div>
 					)}

@@ -13,6 +13,10 @@ type DockerHandler struct {
 	service *docker.Service
 }
 
+type ServerCreateRequest struct {
+	ServerName string `json:"serverName"`
+}
+
 func NewDockerHandler(service *docker.Service) *DockerHandler {
 	return &DockerHandler{
 		service: service,
@@ -20,7 +24,7 @@ func NewDockerHandler(service *docker.Service) *DockerHandler {
 }
 
 func (h *DockerHandler) CreateServerHandler(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.service.CreateServer(r.Context(), r)
+	resp, err := h.service.CreateServer(r.Context())
 	if err != nil {
 		log.Errorf("Failed to create server due: %s", err)
 		http.Error(w, "failed to create server", http.StatusInternalServerError)

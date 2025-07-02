@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
+	"net"
+	"strconv"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -16,7 +18,6 @@ type Service struct {
 }
 
 // Service to create the server
-// Allocate the ports
 
 type CreateOptions struct {
 	Name     string   `json:"name"`
@@ -26,15 +27,34 @@ type CreateOptions struct {
 	Commands []string `json:"commands"`
 }
 
+const MIN_PORT = 25565
+const MAX_PORT = 25595
+
 func NewDockerService() *Service {
 	return &Service{}
 }
 
-func (s *Service) CreateServer(ctx context.Context, r *http.Request) (string, error) {
+func (s *Service) getAvailablePort() (string, error) {
+	for i := MIN_PORT; i < MAX_PORT; i++ {
+		currPort := strconv.Itoa(i)
+		address := net.JoinHostPort("localhost", currPort)
+		conn, err := net.DialTimeout("udp", address, time.Millisecond*500)
+		if err != nil {
+			continue
+		}
+
+		defer conn.Close()
+		return "", nil
+	}
+
+	return "", fmt.Errorf("Server side error, all ports in use.")
+}
+
+func (s *Service) CreateServer(ctx context.Context) (string, error) {
 	opts := new(CreateOptions)
 	parseCreateOpts(opts)
 
-	cli, err := newDockerClient(client.FromEnv)
+	cli, err := s.newDockerClient(client.FromEnv)
 	if err != nil {
 		return "", err
 	}
@@ -47,25 +67,65 @@ func (s *Service) CreateServer(ctx context.Context, r *http.Request) (string, er
 	}
 
 	defer reader.Close()
-
 	io.Copy(io.Discard, reader)
-	config := &container.Config{
+
+	port, err := s.getAvailablePort()
+	if err != nil {
+		return "", err
+	}
+
+	serverName := fmt.Sprintf("minecraft-server-%s", port)
+
+	containerConfig := &container.Config{
 		Image: imageName,
 		Cmd:   opts.Commands,
 		ExposedPorts: nat.PortSet{
 			nat.Port("25565/tcp"): struct{}{},
 		},
+		Env: []string{
+			"EULA=TRUE",
+		},
 	}
 
-	resp, err := cli.ContainerCreate(ctx, config, nil, nil, nil, opts.Name)
+	hostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"25565/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: port,
+				},
+			},
+		},
+	}
+
+	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, serverName)
 	if err != nil {
+		return "", err
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return "", err
 	}
 
 	return resp.ID, nil
 }
 
-func (s *Service) DeleteServer(ctx context.Context, serverId int64) error {
+// This should be called only by 2 users
+func (s *Service) DeleteServer(ctx context.Context, serverId string) error {
+	cli, err := s.newDockerClient(client.FromEnv)
+	if err != nil {
+		return err
+	}
+
+	defer cli.Close()
+	rmvOpts := container.RemoveOptions{
+		Force:         true,
+		RemoveVolumes: true,
+	}
+
+	if err := cli.ContainerRemove(ctx, serverId, rmvOpts); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -74,31 +134,3 @@ func (s *Service) StopServer(ctx context.Context, serverId int64) error {
 
 	return nil
 }
-
-// func (s *ContainerHandler) CreateContainerHandler(e echo.Context) error {
-//
-// 	resp, err := createDockerContainer(context.Background(), cli, reader, opts, imageName)
-// 	if err != nil {
-// 		e.JSON(http.StatusInternalServerError, map[string]string{
-// 			"error": "internal server error.",
-// 		})
-//
-// 		return err
-// 	}
-//
-// 	log.Infof("CONTAINER: Container ID: %s", resp.ID)
-// 	if err := cli.ContainerStart(context.Background(), resp.ID, container.StartOptions{}); err != nil {
-// 		log.Warnf("CONTAINER: Unable to start container due: %s", err)
-// 		e.JSON(http.StatusInternalServerError, map[string]string{
-// 			"error": "internal server error.",
-// 		})
-// 		return err
-// 	}
-//
-// 	log.Info("CONTAINER: Container created sucessfully!")
-// 	e.JSON(http.StatusCreated, map[string]string{
-// 		"success": fmt.Sprintf("created container with ID: %s successfully!", resp.ID),
-// 	})
-//
-// 	return nil
-// }

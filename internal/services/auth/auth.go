@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mine-server-manager/internal/config"
 	"mine-server-manager/internal/repository"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -88,7 +89,8 @@ func (s *AuthService) CreateUser(ctx context.Context, userName, userEmail, pwd s
 
 func (s *AuthService) IsWhitelisted(userEmail string) bool {
 	for _, u := range s.cfg.Whitelist {
-		if subtle.ConstantTimeCompare([]byte(u), []byte(userEmail)) == 1 {
+		whitelistedEmail := strings.ToLower(strings.TrimSpace(u))
+		if subtle.ConstantTimeCompare([]byte(whitelistedEmail), []byte(userEmail)) == 1 {
 			return true
 		}
 	}
