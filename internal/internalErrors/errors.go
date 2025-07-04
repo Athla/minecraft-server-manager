@@ -12,4 +12,7 @@ var (
 	ErrUserAlreadyExists    = errors.New("user already exists")
 	ErrCacheItemNotFound    = errors.New("cache item not found")
 	ErrCacheItemExpired     = errors.New("cache item expired")
+	ErrServerTypeNeeded     = errors.New("server type needed")
+	ErrInvalidVersion       = errors.New("invalid version")
+	ErrInvalidServerType    = errors.New("invalid server type")
 )

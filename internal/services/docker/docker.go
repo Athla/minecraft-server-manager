@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
-	"strconv"
-	"time"
+	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -34,23 +33,7 @@ func NewDockerService() *Service {
 	return &Service{}
 }
 
-func (s *Service) getAvailablePort() (string, error) {
-	for i := MIN_PORT; i < MAX_PORT; i++ {
-		currPort := strconv.Itoa(i)
-		address := net.JoinHostPort("localhost", currPort)
-		conn, err := net.DialTimeout("udp", address, time.Millisecond*500)
-		if err != nil {
-			continue
-		}
-
-		defer conn.Close()
-		return "", nil
-	}
-
-	return "", fmt.Errorf("Server side error, all ports in use.")
-}
-
-func (s *Service) CreateServer(ctx context.Context) (string, error) {
+func (s *Service) CreateServer(ctx context.Context, serverType string) (string, error) {
 	opts := new(CreateOptions)
 	parseCreateOpts(opts)
 
@@ -74,7 +57,25 @@ func (s *Service) CreateServer(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	serverName := fmt.Sprintf("minecraft-server-%s", port)
+	var chosenServerEnv string
+	switch strings.ToLower(serverType) {
+	case "forge":
+		chosenServerEnv = "FORGE"
+	case "fabric":
+		chosenServerEnv = "FABRIC"
+	case "paper":
+		chosenServerEnv = "PAPER"
+	case "neoforge":
+		chosenServerEnv = "NEOFORGE"
+	case "vanilla":
+		chosenServerEnv = "VANILLA"
+	default:
+		chosenServerEnv = "VANILLA"
+	}
+
+	serverName := fmt.Sprintf("minecraft-server-%s-%v", chosenServerEnv, port)
+	log.Infof("SERVICE-DOCKER: Server name: %s", serverName)
+	serverType = fmt.Sprintf("TYPE=%s", chosenServerEnv)
 
 	containerConfig := &container.Config{
 		Image: imageName,
@@ -84,6 +85,7 @@ func (s *Service) CreateServer(ctx context.Context) (string, error) {
 		},
 		Env: []string{
 			"EULA=TRUE",
+			serverType,
 		},
 	}
 
@@ -106,6 +108,8 @@ func (s *Service) CreateServer(ctx context.Context) (string, error) {
 	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return "", err
 	}
+
+	log.Infof("SERVICE-DOCKER: Container started: %s", resp.ID)
 
 	return resp.ID, nil
 }

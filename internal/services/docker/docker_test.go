@@ -2,6 +2,8 @@ package docker
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"testing"
 	"time"
 
@@ -14,23 +16,29 @@ var (
 	cancel = func() {}
 )
 
+var (
+	server = flag.String("server", "vanilla", "minecraft server type")
+)
+
 func TestMain(m *testing.M) {
 	svc = NewDockerService()
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
+	flag.Parse()
 
 	m.Run()
 }
 
-func TestCreateServer(t *testing.T) {
-	id, err := svc.CreateServer(ctx)
-	assert.NoError(t, err)
+func TestCreateServerVanilla(t *testing.T) {
+	id, err := svc.CreateServer(ctx, *server)
+	assert.NoError(t, err, fmt.Sprintf("Unable to create server due: %v", err))
 
 	t.Logf("Current id: %s", id)
 }
 
+// DONE
 func TestDeleteServer(t *testing.T) {
-	id, err := svc.CreateServer(ctx)
+	id, err := svc.CreateServer(ctx, "vanilla")
 	assert.NoError(t, err)
 
 	err = svc.DeleteServer(ctx, id)

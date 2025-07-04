@@ -25,7 +25,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			http.HandlerFunc(authHandler.RegisterHandler))).Methods("POST", "OPTIONS")
 
 	dockerHandler := handlers.NewDockerHandler(s.services.DockerService)
-	r.HandleFunc("/create_vanilla", dockerHandler.CreateServerHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/create/{serverType}/{version}", dockerHandler.CreateServerHandler).Queries("version", "{version}").Methods("POST", "OPTIONS")
 
 	r.HandleFunc("/", s.HelloWorldHandler)
 
