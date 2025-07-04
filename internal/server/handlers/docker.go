@@ -63,7 +63,7 @@ func (h *DockerHandler) validateVars(vars map[string]string) error {
 	rawVersion := vars["version"]
 	// change to int, check if between valid versions
 	if rawVersion == "" {
-		return internalErrors.ErrInvalidVersion
+		rawVersion = ""
 	}
 
 	version, err := strconv.Atoi(strings.Join(strings.Split(rawVersion, "."), ""))
@@ -83,7 +83,8 @@ func (h *DockerHandler) CreateServerHandler(w http.ResponseWriter, r *http.Reque
 	if err := h.validateVars(vars); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	resp, err := h.service.CreateServer(r.Context(), vars["serverType"])
+
+	resp, err := h.service.CreateServer(r.Context(), vars["serverType"], vars["version"])
 	if err != nil {
 		http.Error(w, "failed to create server", http.StatusInternalServerError)
 		return

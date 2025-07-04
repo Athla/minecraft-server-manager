@@ -17,7 +17,8 @@ var (
 )
 
 var (
-	server = flag.String("server", "vanilla", "minecraft server type")
+	server  = flag.String("server", "vanilla", "minecraft server type")
+	version = flag.String("version", "latest", "minecraft server version")
 )
 
 func TestMain(m *testing.M) {
@@ -30,7 +31,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateServerVanilla(t *testing.T) {
-	id, err := svc.CreateServer(ctx, *server)
+	id, err := svc.CreateServer(ctx, *server, *version)
 	assert.NoError(t, err, fmt.Sprintf("Unable to create server due: %v", err))
 
 	t.Logf("Current id: %s", id)
@@ -38,7 +39,7 @@ func TestCreateServerVanilla(t *testing.T) {
 
 // DONE
 func TestDeleteServer(t *testing.T) {
-	id, err := svc.CreateServer(ctx, "vanilla")
+	id, err := svc.CreateServer(ctx, "vanilla", *version)
 	assert.NoError(t, err)
 
 	err = svc.DeleteServer(ctx, id)

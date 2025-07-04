@@ -33,7 +33,7 @@ func NewDockerService() *Service {
 	return &Service{}
 }
 
-func (s *Service) CreateServer(ctx context.Context, serverType string) (string, error) {
+func (s *Service) CreateServer(ctx context.Context, serverType string, serverVersion string) (string, error) {
 	opts := new(CreateOptions)
 	parseCreateOpts(opts)
 
@@ -86,6 +86,7 @@ func (s *Service) CreateServer(ctx context.Context, serverType string) (string, 
 		Env: []string{
 			"EULA=TRUE",
 			serverType,
+			"ONLINE_MODE=FALSE",
 		},
 	}
 
